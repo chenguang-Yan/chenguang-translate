@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 
 import config
 from core import detector
-from core.detector import is_word, is_english, normalize
+from core.detector import is_word, normalize
 from core.screen import physical_to_logical
 from core import translator
 from core.watcher import SignalBridge, Watcher
@@ -164,10 +164,11 @@ class AppController(QObject):
                 config.log_debug("已取词但内容为空，跳过")
                 return
             cfg = config.load()
+            scope = config.normalize_scope(cfg.get("translate_scope"))
             # 规则：只要选中了内容就弹窗。
             # ① 链接：翻译它没有意义，弹原文 + 复制 + 打开按钮；
-            # ② 非英文（中文等）：按「仅对英文划译」设置决定翻不翻，但一定弹窗；
-            # ③ 英文：一律翻译。
+            # ② 不在「翻译范围」内的内容：不翻译，弹原文 + 复制（始终弹窗，方便复制）；
+            # ③ 其余（命中范围）：正常翻译，按单词 / 短句分别渲染。
             if detector.is_url(text):
                 config.log_debug(f"网址，只显示原文 | {text[:60]!r}")
                 self.popup.show_plain(
@@ -175,9 +176,10 @@ class AppController(QObject):
                     note="网址无需翻译，可复制或在浏览器中打开",
                     url=text)
                 return
-            if not is_english(text) and cfg.get("english_only"):
-                config.log_debug(f"非英文，弹原文供复制 | {text[:40]!r}")
-                self.popup.show_plain(text, x, y)
+            if not detector.matches_scope(text, scope):
+                config.log_debug(
+                    f"非目标语言，弹原文供复制 | 范围={scope} | {text[:40]!r}")
+                self.popup.show_plain(text, x, y, note=config.skip_note(scope))
                 return
             config.add_history(text, cfg.get("history_limit", 5))
             if self.settings.isVisible():

@@ -27,6 +27,42 @@ MAX_CAPTURE_LEN = 2000
 # 注：config.json 位于程序所在目录（打包后即 exe 所在目录，如 dist\划词翻译\），
 # 首次启动自动生成。
 
+# ============ 翻译范围（划词时要翻译哪种语言的内容） ============
+# 命中范围的文本会被送往翻译接口；未命中范围的文本**仍然弹窗**，
+# 但只显示原文并保留复制按钮（见 ui/popup.py 的 show_plain）。
+SCOPE_EN = "en"        # 仅翻译英文：只有纯英文内容才翻译
+SCOPE_ZH = "zh"        # 仅翻译中文：只有含中文的内容才翻译
+SCOPE_BOTH = "both"    # 中英文均翻译：含英文或中文都翻译
+
+TRANSLATE_SCOPES = {
+    SCOPE_EN: "仅翻译英文",
+    SCOPE_ZH: "仅翻译中文",
+    SCOPE_BOTH: "中英文均翻译",
+}
+DEFAULT_TRANSLATE_SCOPE = SCOPE_EN
+
+# 未命中翻译范围时，浮窗里提示用户为什么没翻译
+SCOPE_SKIP_NOTE = {
+    SCOPE_EN: "已跳过翻译（当前仅翻译英文，内容非英文），可点标题右侧图标复制",
+    SCOPE_ZH: "已跳过翻译（当前仅翻译中文，内容非中文），可点标题右侧图标复制",
+    SCOPE_BOTH: "已跳过翻译（内容既非中文也非英文），可点标题右侧图标复制",
+}
+
+
+def skip_note(scope: str) -> str:
+    """按当前翻译范围给出「为什么没翻译」的浮窗提示文案。"""
+    return SCOPE_SKIP_NOTE.get(scope, SCOPE_SKIP_NOTE[DEFAULT_TRANSLATE_SCOPE])
+
+
+def normalize_scope(value) -> str:
+    """把任意取值规整为合法的三档之一，非法值回落到默认「仅翻译英文」。"""
+    try:
+        v = str(value or "").strip().lower()
+    except Exception:
+        v = ""
+    return v if v in TRANSLATE_SCOPES else DEFAULT_TRANSLATE_SCOPE
+
+
 YOUDAO_APP_KEY_ENV = "YOUDAO_APP_KEY"
 YOUDAO_APP_SECRET_ENV = "YOUDAO_APP_SECRET"
 
@@ -80,7 +116,7 @@ DEFAULT_CONFIG = {
     "auto_translate": True,        # ☑ 划词翻译（松手/双击自动）
     "hotkey_enabled": True,        # ☑ 快捷键取词
     "hotkey": "f4",                # 热键：f4 / ctrl / alt / f9 ...
-    "english_only": True,          # ☑ 仅翻译英文（非英文内容仍弹窗，只显示原文供复制）
+    "translate_scope": DEFAULT_TRANSLATE_SCOPE,   # 翻译范围：仅翻译英文 / 仅翻译中文 / 中英文均翻译
     "drag_threshold": 4,           # 划词触发所需鼠标位移(px)：0-宽松/4-标准/10-严格
     "auto_pronounce": False,       # ☑ 自动朗读
     "pronounce_accent": "us",      # us / uk
@@ -120,14 +156,30 @@ def _deep_merge(base: dict, extra: dict) -> dict:
     return out
 
 
+def _migrate(raw: dict) -> dict:
+    """旧版配置迁移：english_only（布尔）→ translate_scope（三档）。
+
+    旧布尔语义："true" 只翻英文 → SCOPE_EN；取消勾选时所有内容都翻 → SCOPE_BOTH。
+    """
+    if not isinstance(raw, dict):
+        return {}
+    raw = dict(raw)
+    if "translate_scope" not in raw and "english_only" in raw:
+        raw["translate_scope"] = (SCOPE_EN if raw.get("english_only")
+                                  else SCOPE_BOTH)
+    raw.pop("english_only", None)
+    if "translate_scope" in raw:
+        raw["translate_scope"] = normalize_scope(raw.get("translate_scope"))
+    return raw
+
+
 def load() -> dict:
-    cfg = dict(DEFAULT_CONFIG)
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            cfg = _deep_merge(cfg, json.load(f))
-    except (FileNotFoundError, json.JSONDecodeError):
-        pass
-    return cfg
+            raw = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError, UnicodeDecodeError):
+        raw = {}
+    return _deep_merge(dict(DEFAULT_CONFIG), _migrate(raw))
 
 
 def save(cfg: dict) -> None:

@@ -535,7 +535,9 @@ class TranslationPopup(QWidget):
                    url: str = None):
         """只显示原文、不翻译，保留复制按钮方便取用。
 
-        - 非英文内容：默认提示「已跳过翻译（内容非英文）」；
+        - 不在「翻译范围」内的内容（如设为仅翻译英文却划到中文）：
+          默认提示「已跳过翻译（当前仅翻译英文，内容非英文）」，
+          也可由调用方传入更贴合当前设置的 note（见 config.skip_note）；
         - 超长内容/链接：调用方可传 note 覆盖提示文案，传 url 则额外给「打开链接」。
         """
         norm = detector.normalize(text)
@@ -544,7 +546,7 @@ class TranslationPopup(QWidget):
         def build(lay):
             self._title(lay, norm or "…", copy_text=norm)
             self._hline(lay)
-            tip = note or "已跳过翻译（内容非英文），可点标题右侧图标复制"
+            tip = note or config.skip_note("en")
             lay.addWidget(self._label(tip, "Accent", True))
             if url:
                 row = QHBoxLayout()

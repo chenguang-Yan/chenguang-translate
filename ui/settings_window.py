@@ -285,12 +285,20 @@ class SettingsWindow(QMainWindow):
         row.addStretch(1)
         grid.addLayout(row, r, 0, 1, 2); r += 1
 
-        self.chk_english = QCheckBox("仅翻译英文（中文内容只显示原文供复制）")
-        self.chk_english.setToolTip(
-            "勾选：划到中文等非英文内容时不翻译，但仍会弹窗显示原文并带复制按钮；\n"
-            "取消勾选：中文也会翻译（译为英文）。\n"
-            "无论哪种情况，只要选中了内容就会弹窗。")
-        grid.addWidget(self.chk_english, r, 0, 1, 2); r += 1
+        row = QHBoxLayout()
+        row.setSpacing(9)
+        row.addWidget(QLabel("翻译范围："))
+        self.cmb_scope = StyledComboBox(width=124)
+        for k in (config.SCOPE_EN, config.SCOPE_ZH, config.SCOPE_BOTH):
+            self.cmb_scope.addItem(config.TRANSLATE_SCOPES[k], k)
+        self.cmb_scope.setToolTip(
+            "决定划选到的哪些内容会被翻译，未命中的内容仍然弹窗，只显示原文并带复制按钮：\n"
+            "· 仅翻译英文：只翻译纯英文内容（含中文的一律不翻译）；\n"
+            "· 仅翻译中文：只翻译含中文的内容，英文不翻译；\n"
+            "· 中英文均翻译：含英文或中文都翻译（其它语言仍不翻译）。")
+        row.addWidget(self.cmb_scope)
+        row.addStretch(1)
+        grid.addLayout(row, r, 0, 1, 2); r += 1
 
         row = QHBoxLayout()
         row.setSpacing(9)
@@ -518,7 +526,11 @@ class SettingsWindow(QMainWindow):
         self.chk_hotkey.setChecked(cfg["hotkey_enabled"])
         idx = self.cmb_hotkey.findData(cfg["hotkey"])
         self.cmb_hotkey.setCurrentIndex(idx if idx >= 0 else 0)
-        self.chk_english.setChecked(cfg["english_only"])
+        # 翻译范围：配置值不在候选内时回落到「仅翻译英文」
+        scidx = self.cmb_scope.findData(
+            config.normalize_scope(cfg.get("translate_scope")))
+        self.cmb_scope.setCurrentIndex(
+            scidx if scidx >= 0 else self.cmb_scope.findData(config.SCOPE_EN))
         self.chk_pron.setChecked(cfg["auto_pronounce"])
         idx = self.cmb_accent.findData(cfg["pronounce_accent"])
         self.cmb_accent.setCurrentIndex(idx if idx >= 0 else 0)
@@ -553,7 +565,7 @@ class SettingsWindow(QMainWindow):
         self.chk_auto.stateChanged.connect(lambda *_: self._save())
         self.chk_hotkey.stateChanged.connect(lambda *_: self._save())
         self.cmb_hotkey.currentIndexChanged.connect(lambda *_: self._save())
-        self.chk_english.stateChanged.connect(lambda *_: self._save())
+        self.cmb_scope.currentIndexChanged.connect(lambda *_: self._save())
         self.chk_pron.stateChanged.connect(lambda *_: self._save())
         self.cmb_accent.currentIndexChanged.connect(lambda *_: self._save())
         self.cmb_sens.currentIndexChanged.connect(lambda *_: self._save())
@@ -587,6 +599,10 @@ class SettingsWindow(QMainWindow):
         if self.edit_auto_close.text().strip() != str(v):
             self.edit_auto_close.setText(str(v))
 
+    def _scope_value(self) -> str:
+        """读取翻译范围；下拉数据异常时回落到「仅翻译英文」"""
+        return config.normalize_scope(self.cmb_scope.currentData())
+
     def _hist_limit_value(self) -> int:
         v = self.cmb_hist.currentData()
         return int(v) if v is not None else 5
@@ -608,7 +624,7 @@ class SettingsWindow(QMainWindow):
             auto_translate=self.chk_auto.isChecked(),
             hotkey_enabled=self.chk_hotkey.isChecked(),
             hotkey=self.cmb_hotkey.currentData(),
-            english_only=self.chk_english.isChecked(),
+            translate_scope=self._scope_value(),
             drag_threshold=self.cmb_sens.currentData() or 4,
             auto_pronounce=self.chk_pron.isChecked(),
             pronounce_accent=self.cmb_accent.currentData(),
