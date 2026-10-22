@@ -1,0 +1,6 @@
+PyQt6>=6.6
+pynput>=1.7
+keyboard>=0.13
+requests>=2.31
+pyperclip>=1.8
+edge-tts>=7.0

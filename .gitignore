@@ -1,0 +1,30 @@
+# ===== 构建中间产物（可随时重新打包生成） =====
+build/
+__pycache__/
+*.pyc
+*.pyo
+
+# ===== 运行时生成的数据：含隐私与密钥 =====
+# config.json 内含翻译 API 密钥字段（有道 / 百度 / DeepL / 谷歌），切勿提交
+config.json
+# 本地凭据文件（译 API 密钥，优先级最高的本地来源）
+secrets.local.json
+# history.json 是用户的查询历史
+history.json
+# debug.log 记录用户划词内容与网址
+*.log
+
+# ===== 工具与编辑器 =====
+.workbuddy/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ===== 明确保留：dist/（含 exe）、preview.png、assets 与全部源码 =====
+# dist/、*.exe、preview.png、assets/ 均不在忽略范围内
+# 注：dist 目录内的 config.json / history.json / debug.log 是运行时文件，
+#     已被上方同名规则覆盖忽略。
+
+# ===== 发布压缩包（体积大，作为 Release 附件分发，不入库） =====
+*.zip
