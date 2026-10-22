@@ -39,9 +39,9 @@ class TranslateError(Exception):
 
 
 _NOT_CONFIGURED_MSG = (
-    "翻译源未配置：请设置环境变量 YOUDAO_APP_KEY / YOUDAO_APP_SECRET，"
-    "或在程序目录新建 secrets.local.json 填入凭据"
-    "（格式参考仓库中的 secrets.local.example.json）"
+    "翻译源未配置：请在设置界面「翻译源 → 有道」填写 appKey / appSecret，"
+    "或直接在程序目录的 config.json 中填写 youdao_app_key / youdao_app_secret"
+    "（也可设置环境变量 YOUDAO_APP_KEY / YOUDAO_APP_SECRET）"
 )
 
 
@@ -80,7 +80,7 @@ def translate_text(text: str, app_key: str = None, app_secret: str = None,
                    from_lang: str = "auto", to_lang: str = "zh-CHS") -> str:
     """调用有道智云文本翻译 API，返回译文。
 
-    凭据优先级：显式传入 > 环境变量 > secrets.local.json > config.json。
+    凭据优先级：显式传入 > 环境变量 > config.json。
     """
     cfg_key, cfg_secret = config.youdao_credentials()
     app_key = app_key or cfg_key

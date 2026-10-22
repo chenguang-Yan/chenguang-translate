@@ -15,41 +15,33 @@ APP_NAME = "划词翻译"
 MAX_CAPTURE_LEN = 2000
 
 # ============ 翻译源凭据读取 ============
-# 重要：真实凭据**不要写死进源码并提交到版本库**。此处按以下优先级获取：
-#   1. 环境变量 YOUDAO_APP_KEY / YOUDAO_APP_SECRET
-#   2. 程序目录下的 secrets.local.json（不入库，推荐本地开发/自用）
-#   3. config.json 中的 youdao_app_key / youdao_app_secret（同样不入库）
-# 三者都为空时报「翻译源未配置」。
+# 重要：真实凭据**不要写死进源码并提交到版本库**。有道凭据与其它翻译源一样，
+# 统一存放在程序目录下的 config.json（与被忽略的百度/谷歌/DeepL 凭据同文件），
+# 也可通过环境变量提供（优先级更高）。两者都为空时报「翻译源未配置」。
 #
-# secrets.local.json 格式：
-#   {"youdao_app_key": "你的appKey", "youdao_app_secret": "你的appSecret"}
+# config.json 中相关字段：
+#   "youdao_app_key": "你的appKey",
+#   "youdao_app_secret": "你的appSecret",
+#   "baidu_appid": "...", "baidu_secret": "...", ...
+#
+# 注：config.json 位于程序所在目录（打包后即 exe 所在目录，如 dist\划词翻译\），
+# 首次启动自动生成。
 
-SECRETS_FILE = "secrets.local.json"
+YOUDAO_APP_KEY_ENV = "YOUDAO_APP_KEY"
+YOUDAO_APP_SECRET_ENV = "YOUDAO_APP_SECRET"
 
 
 def youdao_credentials() -> tuple:
     """按优先级取得有道凭据，返回 (app_key, app_secret)；未配置时返回 ("", "")。"""
     import os as _os
 
-    # 1) 环境变量
-    key = (_os.environ.get("YOUDAO_APP_KEY") or "").strip()
-    secret = (_os.environ.get("YOUDAO_APP_SECRET") or "").strip()
+    # 1) 环境变量（优先级最高，便于 CI / 临时覆盖）
+    key = (_os.environ.get(YOUDAO_APP_KEY_ENV) or "").strip()
+    secret = (_os.environ.get(YOUDAO_APP_SECRET_ENV) or "").strip()
     if key and secret:
         return key, secret
 
-    # 2) 本地未入库的密钥文件
-    try:
-        path = os.path.join(APP_DIR, SECRETS_FILE)
-        with open(path, "r", encoding="utf-8") as f:
-            d = json.load(f)
-        key = (d.get("youdao_app_key") or "").strip()
-        secret = (d.get("youdao_app_secret") or "").strip()
-        if key and secret:
-            return key, secret
-    except (FileNotFoundError, json.JSONDecodeError, OSError, AttributeError):
-        pass
-
-    # 3) 运行时配置（config.json，同样未被版本库跟踪）
+    # 2) config.json（程序目录下的主配置文件）
     try:
         cfg = load()
         return ((cfg.get("youdao_app_key") or "").strip(),
@@ -101,10 +93,11 @@ DEFAULT_CONFIG = {
     # 系统
     "autostart": False,            # 开机自启动
     "history_limit": 5,            # 查询历史显示条数
-    # 翻译源：youdao（内置默认配置）/ baidu / google / deepl
+    # 翻译源：youdao（默认引擎）/ baidu / google / deepl
     "translate_source": "youdao",
-    # 有道凭据（也可通过环境变量 YOUDAO_APP_KEY/YOUDAO_APP_SECRET 或
-    # secrets.local.json 提供，优先级更高；留空即「未配置」）
+    # 有道凭据（与其它翻译源凭据一同存放在本文件）
+    # 也可通过环境变量 YOUDAO_APP_KEY/YOUDAO_APP_SECRET 提供，优先级更高；
+    # 留空即「未配置」，可在设置界面「翻译源」中填写
     "youdao_app_key": "",
     "youdao_app_secret": "",
     "baidu_appid": "",             # 百度翻译开放平台 APP ID

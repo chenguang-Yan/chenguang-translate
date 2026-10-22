@@ -402,20 +402,30 @@ class SettingsWindow(QMainWindow):
         for key, name in translator.SOURCES.items():
             self.cmb_source.addItem(name, key)
         self.cmb_source.setToolTip(
-            "有道翻译已内置默认配置，直接使用；\n其他引擎需自行申请并填写对应的 API 信息。")
+            "有道翻译为默认引擎，需自行填写 appKey / appSecret；\n"
+            "其他引擎需自行申请并填写对应的 API 信息。\n"
+            "所有凭据统一保存在程序目录下的 config.json。")
         row.addWidget(self.cmb_source)
         row.addStretch(1)
         lay.addLayout(row)
 
         self.src_panels = {}
 
-        # 有道：内置配置
+        # 有道翻译（凭据与其它引擎一样，统一存放在 config.json）
         p = QWidget()
-        pl = QVBoxLayout(p)
-        pl.setContentsMargins(0, 0, 0, 0)
-        lbl = QLabel("已内置默认配置，无需填写")
-        lbl.setObjectName("Hint")
-        pl.addWidget(lbl)
+        fl = QFormLayout(p)
+        fl.setContentsMargins(0, 0, 0, 0)
+        fl.setSpacing(6)
+        self.ed_youdao_key = QLineEdit()
+        self.ed_youdao_key.setPlaceholderText("appKey")
+        self.ed_youdao_secret = QLineEdit()
+        self.ed_youdao_secret.setPlaceholderText("appSecret")
+        fl.addRow("appKey：", self.ed_youdao_key)
+        fl.addRow("secret：", self.ed_youdao_secret)
+        fl.addRow("", self._hint(
+            "在 ai.youdao.com 注册并创建「文本翻译」应用获取；\n"
+            "也可直接编辑程序目录下的 config.json 填入 youdao_app_key / "
+            "youdao_app_secret"))
         self.src_panels["youdao"] = p
         lay.addWidget(p)
 
@@ -491,6 +501,8 @@ class SettingsWindow(QMainWindow):
     def _source_signature(self) -> tuple:
         return (
             self.cmb_source.currentData(),
+            self.ed_youdao_key.text(),
+            self.ed_youdao_secret.text(),
             self.ed_baidu_appid.text(),
             self.ed_baidu_secret.text(),
             self.ed_google_key.text(),
@@ -519,6 +531,8 @@ class SettingsWindow(QMainWindow):
         # 翻译源
         sidx = self.cmb_source.findData(cfg.get("translate_source", "youdao"))
         self.cmb_source.setCurrentIndex(sidx if sidx >= 0 else 0)
+        self.ed_youdao_key.setText(cfg.get("youdao_app_key", "") or "")
+        self.ed_youdao_secret.setText(cfg.get("youdao_app_secret", "") or "")
         self.ed_baidu_appid.setText(cfg.get("baidu_appid", "") or "")
         self.ed_baidu_secret.setText(cfg.get("baidu_secret", "") or "")
         self.ed_google_key.setText(cfg.get("google_apikey", "") or "")
@@ -549,6 +563,8 @@ class SettingsWindow(QMainWindow):
         # 翻译源
         self.cmb_source.currentIndexChanged.connect(
             lambda *_: (self._sync_source_panel(), self._save()))
+        self.ed_youdao_key.textChanged.connect(lambda *_: self._save())
+        self.ed_youdao_secret.textChanged.connect(lambda *_: self._save())
         self.ed_baidu_appid.textChanged.connect(lambda *_: self._save())
         self.ed_baidu_secret.textChanged.connect(lambda *_: self._save())
         self.ed_google_key.textChanged.connect(lambda *_: self._save())
@@ -602,6 +618,8 @@ class SettingsWindow(QMainWindow):
             close_on_outside_click=self.chk_close_outside.isChecked(),
             autostart=self.chk_autostart.isChecked(),
             translate_source=self.cmb_source.currentData() or "youdao",
+            youdao_app_key=self.ed_youdao_key.text(),
+            youdao_app_secret=self.ed_youdao_secret.text(),
             baidu_appid=self.ed_baidu_appid.text(),
             baidu_secret=self.ed_baidu_secret.text(),
             google_apikey=self.ed_google_key.text(),

@@ -97,23 +97,31 @@
 
 ## 四、翻译源配置
 
-默认使用**有道翻译**。出于安全考虑，**源码中不内置任何真实凭据**，请自行配置。程序按以下优先级查找凭据（取第一个非空的）：
+默认使用**有道翻译**。出于安全考虑，**源码中不内置任何真实凭据**，请自行配置。有道凭据与其它翻译源**统一存放在同一个文件**：程序目录下的 `config.json`。
 
 | 优先级 | 方式 | 说明 |
 | --- | --- | --- |
-| 1 | **环境变量** | `YOUDAO_APP_KEY` / `YOUDAO_APP_SECRET` |
-| 2 | **本地密钥文件** | 程序目录下新建 `secrets.local.json`，格式见 `secrets.local.example.json` |
-| 3 | **运行时配置** | 程序目录下的 `config.json`（启动后自动生成）中的 `youdao_app_key` / `youdao_app_secret` |
+| 1 | **设置界面填写** | 设置 →「翻译源」→ 选择「有道翻译」→ 填写 appKey / appSecret（推荐） |
+| 2 | **直接编辑配置文件** | 程序目录下 `config.json` 中的 `youdao_app_key` / `youdao_app_secret` |
+| 3 | **环境变量** | `YOUDAO_APP_KEY` / `YOUDAO_APP_SECRET`（优先级最高，便于临时覆盖） |
 
-推荐第 2 种，配置一次即可长期使用：
+打包版运行后会自动在 exe 所在目录生成 `config.json`（例如 `dist\划词翻译\config.json`），有道与其它引擎的凭据都在这个文件里：
 
 ```json
-{ "youdao_app_key": "你的appKey", "youdao_app_secret": "你的appSecret" }
+{
+  "translate_source": "youdao",
+  "youdao_app_key": "你的appKey",
+  "youdao_app_secret": "你的appSecret",
+  "baidu_appid": "",
+  "baidu_secret": "",
+  "google_apikey": "",
+  "deepl_authkey": ""
+}
 ```
 
 > 🔑 密钥获取：到 [有道智云](https://ai.youdao.com) 注册并创建「文本翻译」应用。
 >
-> ⚠️ **安全提醒**：上述文件均已被 `.gitignore` 忽略，请勿将你的凭据提交到公开仓库。若密钥不慎泄露，请立即到有道后台轮换。
+> ⚠️ **安全提醒**：`config.json` 已被 `.gitignore` 忽略，请勿将你的凭据提交到公开仓库。若密钥不慎泄露，请立即到有道后台轮换。
 
 如需更换翻译源：
 
@@ -205,9 +213,9 @@ pyinstaller 划词翻译.spec -y
 | `config.json` | 你的设置项与各翻译源 API 凭据 | ❌ 已忽略 |
 | `history.json` | 你的查询历史记录 | ❌ 已忽略 |
 | `debug.log` | 排查用的运行日志（含划选的文本） | ❌ 已忽略 |
-| `secrets.local.json` | 你的本地密钥文件 | ❌ 已忽略 |
+> 其中 `config.json` 同时保存各翻译源的 API 凭据（有道 / 百度 / 谷歌 / DeepL），因此已被忽略不会入库。
 
-这些文件保存在程序所在目录，删除后程序会自动重建。
+这些文件保存在程序所在目录（打包后即 exe 所在目录），删除后程序会自动重建。
 
 > ⚠️ 源码中**不含任何真实凭据**，请勿把自己的密钥提交到公开仓库。若怀疑密钥已泄露，请立即到对应平台轮换。
 

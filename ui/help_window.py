@@ -115,8 +115,11 @@ HELP_HTML = """
 </ul>
 <h3>翻译源</h3>
 <ul>
-  <li>默认 <b>有道翻译</b>，已内置配置，开箱即用。</li>
-  <li>也可切换 <b>百度 / 谷歌 / DeepL</b>，需自行申请并填写对应的 API 凭据。</li>
+  <li>默认 <b>有道翻译</b>，需自行填写 <b>appKey / appSecret</b> 后方可使用。</li>
+  <li>填写位置：设置界面「翻译源」面板，或直接编辑程序目录下的
+      <b>config.json</b>（<code>youdao_app_key</code> / <code>youdao_app_secret</code>）。</li>
+  <li>也可切换 <b>百度 / 谷歌 / DeepL</b>，需自行申请并填写对应的 API 凭据，
+      所有凭据都保存在同一个 <b>config.json</b> 中。</li>
   <li>改动翻译源或凭据后，设置界面会自动重测连通性；失败时显示红色提示，可点「重试」。</li>
 </ul>
 
