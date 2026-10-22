@@ -287,6 +287,19 @@ class SettingsWindow(QMainWindow):
 
         row = QHBoxLayout()
         row.setSpacing(9)
+        self.chk_pron = QCheckBox("自动朗读")
+        row.addWidget(self.chk_pron)
+        row.addSpacing(2)
+        self.cmb_accent = StyledComboBox(width=64)
+        self.cmb_accent.addItem("美", "us")
+        self.cmb_accent.addItem("英", "uk")
+        row.addWidget(self.cmb_accent)
+        row.addStretch(1)
+        grid.addLayout(row, r, 0, 1, 2); r += 1
+
+        # 翻译范围（放在自动朗读下一行）
+        row = QHBoxLayout()
+        row.setSpacing(9)
         row.addWidget(QLabel("翻译范围："))
         self.cmb_scope = StyledComboBox(width=124)
         for k in (config.SCOPE_EN, config.SCOPE_ZH, config.SCOPE_BOTH):
@@ -297,18 +310,6 @@ class SettingsWindow(QMainWindow):
             "· 仅翻译中文：只翻译含中文的内容，英文不翻译；\n"
             "· 中英文均翻译：含英文或中文都翻译（其它语言仍不翻译）。")
         row.addWidget(self.cmb_scope)
-        row.addStretch(1)
-        grid.addLayout(row, r, 0, 1, 2); r += 1
-
-        row = QHBoxLayout()
-        row.setSpacing(9)
-        self.chk_pron = QCheckBox("自动朗读")
-        row.addWidget(self.chk_pron)
-        row.addSpacing(2)
-        self.cmb_accent = StyledComboBox(width=64)
-        self.cmb_accent.addItem("美", "us")
-        self.cmb_accent.addItem("英", "uk")
-        row.addWidget(self.cmb_accent)
         row.addStretch(1)
         grid.addLayout(row, r, 0, 1, 2); r += 1
 
